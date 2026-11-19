@@ -64,7 +64,7 @@ SCIENTIFIC_SYMBOLS = {
 
 # UI Appearance Settings
 APP_TITLE = "MOQ Question Bank Authoring Studio"
-APP_VERSION = "v2.0"
+APP_VERSION = "v3.0"
 WINDOW_MIN_WIDTH = 1250
 WINDOW_MIN_HEIGHT = 800
 
