@@ -88,6 +88,18 @@ def export_all():
     wb.close()
     print(f"Processed {len(questions)} total questions across {len(subjects_dict)} subjects.")
 
+    # Reorder AMVI MCQs
+    if "AMVI" in subjects_dict:
+        import random
+        rnd = random.Random(101)
+        rnd.shuffle(subjects_dict["AMVI"]["questions"])
+        print(f"Reordered {len(subjects_dict['AMVI']['questions'])} AMVI questions to new sequence.")
+
+        # Rebuild consolidated questions list to reflect the new AMVI order
+        questions = []
+        for s_name, data in subjects_dict.items():
+            questions.extend(data["questions"])
+
     # 1. Write subjects catalog (metadata only)
     catalog = []
     for s_name, data in sorted(subjects_dict.items(), key=lambda x: x[0]):
