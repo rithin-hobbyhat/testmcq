@@ -24,12 +24,22 @@ def clean_scientific_math(text: str) -> str:
     if not text or not isinstance(text, str):
         return text if text is not None else ''
 
+    # Preserve LaTeX math blocks ($...$ and $$...$$) to avoid altering internal LaTeX commands
+    math_blocks = []
+    def save_math(m):
+        idx = len(math_blocks)
+        math_blocks.append(m.group(0))
+        return f"__MATH_BLOCK_{idx}__"
+
+    text = re.sub(r'\$\$[^$]+\$\$', save_math, text)
+    text = re.sub(r'\$[^$]+\$', save_math, text)
+
     # 1. Degree & temperature
     text = re.sub(r'\^?\\circ\\text\{C\}|\^?\\circ\s*C|\\circ\s*C', '°C', text)
     text = re.sub(r'\^?\\circ\\text\{F\}|\^?\\circ\s*F|\\circ\s*F', '°F', text)
     text = re.sub(r'\^?\\circ|\\circ|\\degree', '°', text)
 
-    # 2. Standard LaTeX symbols
+    # 2. Standard LaTeX symbols outside math blocks
     replacements = [
         (r'\\times(?![a-zA-Z])', '×'),
         (r'\\pm(?![a-zA-Z])', '±'),
@@ -68,19 +78,26 @@ def clean_scientific_math(text: str) -> str:
     text = re.sub(r'\bDelta-ferrite\b', 'δ-ferrite', text)
     text = re.sub(r'\bAlpha-ferrite\b', 'α-ferrite', text)
     text = re.sub(r'\bGamma-iron\b', 'γ-iron', text)
-    
-    # Delta connection in electrical stator/transformers
     text = re.sub(r'\bDelta\s*\(Delta\)', 'Δ (Delta)', text)
     text = re.sub(r'\bDelta-connected\b', 'Δ-connected', text)
     text = re.sub(r'\bDelta\s+stator\b', 'Δ stator', text)
     text = re.sub(r'\bDelta\s+connection\b', 'Δ connection', text)
     text = re.sub(r'\bDelta\s+winding\b', 'Δ winding', text)
-
-    # Displacement thickness & boundary layer delta: delta*, delta
     text = re.sub(r'\bdelta\*', 'δ*', text)
     text = re.sub(r'\bdelta\b(?!\s*connec|\s*stator|\s*wind|\s*loop)', 'δ', text)
 
-    # 4. Greek engineering & physics variables
+    # 4. Polytropic & thermodynamic equations (pv^n = constant, pv^0 = constant, etc.)
+    text = re.sub(r'\bpv\^n\b', 'p · vⁿ', text, flags=re.I)
+    text = re.sub(r'\bpvⁿ\b', 'p · vⁿ', text, flags=re.I)
+    text = re.sub(r'\bpv\^0\b', 'p · v⁰', text, flags=re.I)
+    text = re.sub(r'\bpv⁰\b', 'p · v⁰', text, flags=re.I)
+    text = re.sub(r'\bpv\^1\b', 'p · v¹', text, flags=re.I)
+    text = re.sub(r'\bpv¹\b', 'p · v¹', text, flags=re.I)
+    text = re.sub(r'\bpv\^[γy]\b', 'p · vᵞ', text, flags=re.I)
+    text = re.sub(r'\bpv\^gamma\b', 'p · vᵞ', text, flags=re.I)
+    text = re.sub(r'\bpvᵞ\b', 'p · vᵞ', text, flags=re.I)
+
+    # 5. Greek engineering & physics variables
     text = re.sub(r'\bsigma_([a-zA-Z0-9]+)\b', r'σ_\1', text)
     text = re.sub(r'\bsigma\b', 'σ', text)
     text = re.sub(r'\brho_([a-zA-Z0-9]+)\b', r'ρ_\1', text)
@@ -95,44 +112,72 @@ def clean_scientific_math(text: str) -> str:
     text = re.sub(r'\blambda_([a-zA-Z0-9]+)\b', r'λ_\1', text)
     text = re.sub(r'\blambda\b', 'λ', text)
     text = re.sub(r'\bphi\b', 'ϕ', text)
-    
     text = re.sub(r'\bmu_([a-zA-Z0-9]+)\b', r'µ_\1', text)
     text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])mu(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'µ', text)
     text = re.sub(r'\bmu\b', 'µ', text)
-
     text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])pi(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'π', text)
     text = re.sub(r'\bpi\b(?!\s*pipe|\s*pin|\s*pilot|\s*piston|\s*pitot)', 'π', text)
-
     text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])nu(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'ν', text)
     text = re.sub(r'\bnu\b(?!\s*Unit|\s*number)', 'ν', text)
-
     text = re.sub(r'\bepsilon_([a-zA-Z0-9]+)\b', r'ε_\1', text)
     text = re.sub(r'\bepsilon\b', 'ε', text)
-
     text = re.sub(r'\beta_([a-zA-Z0-9]+)\b', r'η_\1', text)
     text = re.sub(r'\beta\b(?!\s*carr|\s*hour)', 'η', text)
-
     text = re.sub(r'\balpha([0-9]*)\b', r'α\1', text)
     text = re.sub(r'\balpha_([a-zA-Z0-9]+)\b', r'α_\1', text)
-
     text = re.sub(r'\bbeta([0-9]*)\b', r'β\1', text)
-
     text = re.sub(r'\bpsi(?=\s*[\*\/=])', 'ψ', text)
     text = re.sub(r'=\s*psi\b', '= ψ', text)
     text = re.sub(r'\(psi\)', '(ψ)', text)
 
-    # 5. Square roots: sqrt(...) -> √( ... )
+    # 6. Standard Engineering variables & subscripts (Hf, Qth, Qact, Cd, Cc, Cv, Cp, etc.)
+    eng_vars = [
+        (r'\b(h_f|Hf|hf)\b', 'h<sub>f</sub>'),
+        (r'\b(h_s|hs|Hs)\b(?!\s*head|\s*and|\s*to)', 'h<sub>s</sub>'),
+        (r'\b(h_d|hd|Hd)\b(?!\s*head|\s*and|\s*to)', 'h<sub>d</sub>'),
+        (r'\bhfs\b', 'h<sub>fs</sub>'),
+        (r'\bhfd\b', 'h<sub>fd</sub>'),
+        (r'\b(H_m|Hm)\b', 'H<sub>m</sub>'),
+        (r'\b(Q_th|Qth)\b', 'Q<sub>th</sub>'),
+        (r'\b(Q_act|Qact)\b', 'Q<sub>act</sub>'),
+        (r'\b(C_d|Cd)\b', 'C<sub>d</sub>'),
+        (r'\b(C_c|Cc)\b', 'C<sub>c</sub>'),
+        (r'\b(C_v|Cv)\b', 'C<sub>v</sub>'),
+        (r'\b(C_p|Cp)\b', 'C<sub>p</sub>'),
+        (r'\b(V_s|Vs)\b(?!\s*versus)', 'V<sub>s</sub>'),
+        (r'\b(V_c|Vc)\b', 'V<sub>c</sub>'),
+        (r'\b(V_d|Vd)\b', 'V<sub>d</sub>'),
+        (r'\b(v_d²|vd²|v_d\^2|vd\^2)\b', 'v<sub>d</sub>²'),
+        (r'\b(v_s²|vs²|v_s\^2|vs\^2)\b', 'v<sub>s</sub>²'),
+        (r'\bA_act\b', 'A<sub>act</sub>'),
+        (r'\bA_th\b', 'A<sub>th</sub>'),
+        (r'\bV_act\b', 'V<sub>act</sub>'),
+        (r'\bV_th\b', 'V<sub>th</sub>'),
+        (r'\bV_L\b', 'V<sub>L</sub>'),
+        (r'\bI_L\b', 'I<sub>L</sub>'),
+        (r'\bV_ph\b', 'V<sub>ph</sub>'),
+        (r'\bI_ph\b', 'I<sub>ph</sub>'),
+        (r'\b(W_ps|Wps)\b', 'W<sub>ps</sub>'),
+        (r'\b(W_m|Wm)\b', 'W<sub>m</sub>'),
+        (r'\b(L_e|Le)\b(?=\s*=|\s*of|\s*\/)', 'L<sub>e</sub>'),
+    ]
+    for pat, rep in eng_vars:
+        text = re.sub(pat, rep, text)
+
+    # 7. Powers on subscripted variables: H<sub>m</sub>^(3/4) -> H<sub>m</sub><sup>3/4</sup>
+    text = re.sub(r'<sub>([a-zA-Z0-9]+)</sub>\^\(?([0-9\/]+)\)?', r'<sub>\1</sub><sup>\2</sup>', text)
+    text = re.sub(r'\^(\d+/\d+)', r'<sup>\1</sup>', text)
+
+    # 8. Square roots: sqrt(...) -> √( ... )
     text = re.sub(r'\bsqrt\(([^()]+)\)', r'√(\1)', text)
     text = re.sub(r'\bsqrt\(([^\)]+)\)', r'√(\1)', text)
 
-    # 6. Integrals
+    # 9. Integrals & Approximations
     text = re.sub(r'integral from 0 to ([a-zA-ZδΔ]+) of', r'∫₀^\1', text)
     text = re.sub(r'integral from ([a-zA-Z0-9]+) to ([a-zA-Z0-9]+) of', r'∫_{\1}^{\2}', text)
-
-    # 7. Approximations
     text = re.sub(r'\bapprox\.?\b', '≈', text)
 
-    # 8. Chemical formulas
+    # 10. Chemical formulas
     text = re.sub(r'\\text\{PbO\}_2', 'PbO₂', text)
     text = re.sub(r'\\text\{H\}_2\\text\{SO\}_4', 'H₂SO₄', text)
     text = re.sub(r'\\text\{PbSO\}_4', 'PbSO₄', text)
@@ -141,31 +186,37 @@ def clean_scientific_math(text: str) -> str:
     text = re.sub(r'\\text\{NO\}_\\text\{x\}', 'NOₓ', text)
     text = re.sub(r'\\text\{NO\}_x', 'NOₓ', text)
 
-    # 9. Unwrap \text{...}
+    # 11. Unwrap any bare \text{...}
     text = re.sub(r'\\text\{([^}]*)\}', r'\1', text)
 
-    # 10. Clean up escaped backslashes and percentages
+    # 12. Clean up escaped backslashes and percentages
     text = text.replace(r'\_', '_').replace(r'\ ', ' ').replace(r'\%', '%')
 
-    # 11. Engineering sub-indices: L1 -> L₁, A1 -> A₁, etc.
+    # 13. Engineering sub-indices: L1 -> L₁, A1 -> A₁, etc.
     sub_num = {'1':'₁','2':'₂','3':'₃','4':'₄'}
     text = re.sub(r'\b([yLAdEPVTrFrασ])[1-4]\b', lambda m: m.group(1) + sub_num[m.group(0)[-1]], text)
     text = text.replace('_max', 'ₘₐₓ').replace('_min', 'ₘᵢₙ').replace('_ph', 'ₚₕ')
 
-    # 12. General subscripts
+    # 14. General subscripts
     sub_map = {'0':'₀','1':'₁','2':'₂','3':'₃','4':'₄','5':'₅','6':'₆','7':'₇','8':'₈','9':'₉','x':'ₓ','n':'ₙ','m':'ₘ','v':'ᵥ','p':'ₚ','t':'ₜ'}
     text = re.sub(r'_([0-9xnmvpt])\b', lambda m: sub_map.get(m.group(1), m.group(0)), text)
     text = re.sub(r'_\{([0-9xnmvpt]+)\}', lambda m: ''.join(sub_map.get(c, c) for c in m.group(1)), text)
 
-    # 13. Superscripts
+    # 15. Superscripts
     sup_map = {'0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹','n':'ⁿ','x':'ˣ','st':'ˢᵗ','nd':'ⁿᵈ','rd':'ʳᵈ','th':'ᵗʰ'}
     text = re.sub(r'\^([0-9nx])\b', lambda m: sup_map.get(m.group(1), m.group(0)), text)
     text = re.sub(r'\^\\text\{([a-z]+)\}', lambda m: sup_map.get(m.group(1), m.group(1)), text)
     text = re.sub(r'\^\{([0-9]+)\}', lambda m: ''.join(sup_map.get(c, c) for c in m.group(1)), text)
 
-    # 14. Multiplication in equations: 2 * pi -> 2 · π
+    # 16. Multiplication in equations: 2 * pi -> 2 · π
     text = re.sub(r'(\b[a-zA-Z0-9α-ωΑ-ΩΔδσμτρθηεγλπψων²³⁴⁰¹ⁿ]+)\s*\*\s*([a-zA-Z0-9α-ωΑ-ΩΔδσμτρθηεγλπψων²³⁴⁰¹ⁿ√])', r'\1 · \2', text)
     text = re.sub(r'(\))\s*\*\s*(\()', r'\1 · \2', text)
+
+    # 17. Restore math blocks
+    for idx, mb in enumerate(math_blocks):
+        text = text.replace(f"__MATH_BLOCK_{idx}__", mb)
+
+    return text.strip()
 
     return text.strip()
 
