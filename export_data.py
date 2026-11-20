@@ -65,6 +65,8 @@ def clean_scientific_math(text: str) -> str:
 
     # 3. Delta variants (Engineering pressure drops, temperature, elongation, boundary layer, electrical delta)
     text = re.sub(r'\bdelta_p_([a-zA-Z0-9]+)\b', r'Δp_\1', text)
+    text = re.sub(r'\bdelta_([a-zA-Z0-9]+)\b', r'Δ\1', text)
+    text = re.sub(r'\bdelta\s+([QWHEUSTVhpL])\b', r'Δ\1', text)
     text = re.sub(r'\bdelta_p\b', 'Δp', text, flags=re.I)
     text = re.sub(r'\bdelta_T\b', 'ΔT', text)
     text = re.sub(r'\bdelta_t\b', 'Δt', text)
@@ -78,6 +80,7 @@ def clean_scientific_math(text: str) -> str:
     text = re.sub(r'\bDelta-ferrite\b', 'δ-ferrite', text)
     text = re.sub(r'\bAlpha-ferrite\b', 'α-ferrite', text)
     text = re.sub(r'\bGamma-iron\b', 'γ-iron', text)
+    text = re.sub(r'\bGamma-austenite\b', 'γ-austenite', text)
     text = re.sub(r'\bDelta\s*\(Delta\)', 'Δ (Delta)', text)
     text = re.sub(r'\bDelta-connected\b', 'Δ-connected', text)
     text = re.sub(r'\bDelta\s+stator\b', 'Δ stator', text)
@@ -98,37 +101,109 @@ def clean_scientific_math(text: str) -> str:
     text = re.sub(r'\bpvᵞ\b', 'p · vᵞ', text, flags=re.I)
 
     # 5. Greek engineering & physics variables
+    sub_num = {'1':'₁','2':'₂','3':'₃','4':'₄','0':'₀'}
+    
+    # Sigma (normal stress, Stefan-Boltzmann constant, standard deviation)
     text = re.sub(r'\bsigma_([a-zA-Z0-9]+)\b', r'σ_\1', text)
-    text = re.sub(r'\bsigma\b', 'σ', text)
-    text = re.sub(r'\brho_([a-zA-Z0-9]+)\b', r'ρ_\1', text)
-    text = re.sub(r'\brho\b', 'ρ', text)
-    text = re.sub(r'\btheta\b', 'θ', text)
+    text = re.sub(r'\bsigma([1-4])\b', lambda m: 'σ' + sub_num[m.group(1)], text)
+    text = re.sub(r'\bsigma\b(?!\s*engine|\s*company)', 'σ', text)
+
+    # Tau (shear stress, time constant)
     text = re.sub(r'\btau_([a-zA-Z0-9]+)\b', r'τ_\1', text)
+    text = re.sub(r'\btau([1-4])\b', lambda m: 'τ' + sub_num[m.group(1)], text)
     text = re.sub(r'\btau\b', 'τ', text)
+
+    # Theta (angles, temperatures, steering angles)
+    text = re.sub(r'\btheta_([a-zA-Z0-9]+)\b', r'θ_\1', text)
+    text = re.sub(r'\btheta([1-4])\b', lambda m: 'θ' + sub_num[m.group(1)], text)
+    text = re.sub(r'\btheta\b', 'θ', text)
+
+    # Epsilon (strain, emissivity)
+    text = re.sub(r'\bepsilon_([a-zA-Z0-9]+)\b', r'ε_\1', text)
+    text = re.sub(r'\bepsilon([1-4])\b', lambda m: 'ε' + sub_num[m.group(1)], text)
+    text = re.sub(r'\bepsilon\b', 'ε', text)
+
+    # Eta (efficiency, thermal/mechanical/volumetric efficiency)
+    text = re.sub(r'\beta_([a-zA-Z0-9]+)\b', r'η_\1', text)
+    text = re.sub(r'\beta([1-4])\b', lambda m: 'η' + sub_num[m.group(1)], text)
+    text = re.sub(r'\beta\b(?!\s*carr|\s*hour)', 'η', text)
+
+    # Rho (density, cut-off ratio)
+    text = re.sub(r'\brho_([a-zA-Z0-9]+)\b', r'ρ_\1', text)
+    text = re.sub(r'\brho([1-4])\b', lambda m: 'ρ' + sub_num[m.group(1)], text)
+    text = re.sub(r'\brho\b', 'ρ', text)
+
+    # Zeta (vorticity, damping ratio)
+    text = re.sub(r'\bzeta\b', 'ζ', text)
+
+    # Omega (angular velocity, rotational frequency)
     text = re.sub(r'\bomega_([a-zA-Z0-9]+)\b', r'ω_\1', text)
+    text = re.sub(r'\bomega([1-4])\b', lambda m: 'ω' + sub_num[m.group(1)], text)
+    text = re.sub(r'\bomega²\b', 'ω²', text)
     text = re.sub(r'\bomega\b', 'ω', text)
+
+    # Gamma (adiabatic index, specific heat ratio, shear strain)
     text = re.sub(r'\bgamma_([a-zA-Z0-9]+)\b', r'γ_\1', text)
+    text = re.sub(r'\bgamma([1-4])\b', lambda m: 'γ' + sub_num[m.group(1)], text)
     text = re.sub(r'\bgamma\b', 'γ', text)
+    text = re.sub(r'\bGamma\b(?!\s*Ray|\s*ray)', 'γ', text)
+
+    # Lambda (air-fuel equivalence ratio, slenderness ratio, wavelength)
     text = re.sub(r'\blambda_([a-zA-Z0-9]+)\b', r'λ_\1', text)
+    text = re.sub(r'\bLambda\s*=\s*([0-9\.]+)\b', r'λ = \1', text)
+    text = re.sub(r'\(Lambda\s*\/\s*O2\)', '(λ / O₂)', text)
+    text = re.sub(r'\(Lambda\s+or\s+O2\)', '(λ or O₂)', text)
+    text = re.sub(r'\bLambda\s+Window\b', 'λ-Window', text)
+    text = re.sub(r'(?:λ-sensor\s*\()?λ-sensor\s*\((?:Lambda|Lamda)\s+sensor\)\)?', 'λ-sensor', text)
+    text = re.sub(r'\b(?:Lambda|Lamda)\s+sensor\b', 'λ-sensor', text, flags=re.I)
     text = re.sub(r'\blambda\b', 'λ', text)
+
+    # Alpha & Beta (angles, slip angles, expansion coefficients)
+    text = re.sub(r'\balpha_([a-zA-Z0-9]+)\b', r'α_\1', text)
+    text = re.sub(r'\balpha([1-4])\b', lambda m: 'α' + sub_num[m.group(1)], text)
+    text = re.sub(r'\balpha\b(?!\s*ferrite|\s*particle|\s*ray)', 'α', text)
+    text = re.sub(r'\bbeta_([a-zA-Z0-9]+)\b', r'β_\1', text)
+    text = re.sub(r'\bbeta([1-4])\b', lambda m: 'β' + sub_num[m.group(1)], text)
+    text = re.sub(r'\bbeta\b(?!\s*particle|\s*ray|\s*brass)', 'β', text)
+
+    # Phi
     text = re.sub(r'\bphi\b', 'ϕ', text)
+
+    # Mu & Nu (viscosity, friction coefficient, Poisson's ratio)
     text = re.sub(r'\bmu_([a-zA-Z0-9]+)\b', r'µ_\1', text)
     text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])mu(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'µ', text)
     text = re.sub(r'\bmu\b', 'µ', text)
-    text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])pi(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'π', text)
-    text = re.sub(r'\bpi\b(?!\s*pipe|\s*pin|\s*pilot|\s*piston|\s*pitot)', 'π', text)
     text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])nu(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'ν', text)
     text = re.sub(r'\bnu\b(?!\s*Unit|\s*number)', 'ν', text)
-    text = re.sub(r'\bepsilon_([a-zA-Z0-9]+)\b', r'ε_\1', text)
-    text = re.sub(r'\bepsilon\b', 'ε', text)
-    text = re.sub(r'\beta_([a-zA-Z0-9]+)\b', r'η_\1', text)
-    text = re.sub(r'\beta\b(?!\s*carr|\s*hour)', 'η', text)
-    text = re.sub(r'\balpha([0-9]*)\b', r'α\1', text)
-    text = re.sub(r'\balpha_([a-zA-Z0-9]+)\b', r'α_\1', text)
-    text = re.sub(r'\bbeta([0-9]*)\b', r'β\1', text)
+
+    # Psi (Stream function in fluid mechanics vs tire pressure psi)
+    text = re.sub(r'\bstream function \(psi\)', 'stream function (ψ)', text, flags=re.I)
+    text = re.sub(r'\bstream function\s*\(?psi\)?', 'stream function ψ', text, flags=re.I)
+    text = re.sub(r'd\(psi\)\s*\/\s*d([txytz])', r'd(ψ)/d\1', text)
     text = re.sub(r'\bpsi(?=\s*[\*\/=])', 'ψ', text)
     text = re.sub(r'=\s*psi\b', '= ψ', text)
     text = re.sub(r'\(psi\)', '(ψ)', text)
+
+    # Pi in equations
+    text = re.sub(r'\bPi\s*\*\s*([a-zA-Z0-9])', r'π · \1', text)
+    text = re.sub(r'2\s*\*\s*Pi\s*\*\s*N', '2 · π · N', text, flags=re.I)
+    text = re.sub(r'\bPi\s*\/\s*4', 'π / 4', text)
+    text = re.sub(r'(?<=[0-9\s\*\+\-\/\(\[\=])pi(?=[0-9\s\*\+\-\/\)\]\,]|$)', 'π', text)
+    text = re.sub(r'\bpi\b(?!\s*pipe|\s*pin|\s*pilot|\s*piston|\s*pitot)', 'π', text)
+
+    # Greek Subscripts: σ_x -> σₓ, σ_y -> σᵧ, τ_xy -> τₓᵧ, θ_o -> θₒ, θ_i -> θᵢ
+    text = re.sub(r'([στθερωνλαβΔ])_([xy])\b', lambda m: m.group(1) + ('ₓ' if m.group(2) == 'x' else 'ᵧ'), text)
+    text = re.sub(r'([στθερωνλαβΔ])_max\b', r'\1ₘₐₓ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_min\b', r'\1ₘᵢₙ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_avg\b', r'\1ₐᵥ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_th\b', r'\1ₜₕ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_xy\b', r'\1ₓᵧ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_yx\b', r'\1ᵧₓ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_o\b', r'\1ₒ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_i\b', r'\1ᵢ', text)
+    text = re.sub(r'([στθερωνλαβΔ])_outer\b', r'\1<sub>outer</sub>', text)
+    text = re.sub(r'([στθερωνλαβΔ])_inner\b', r'\1<sub>inner</sub>', text)
+    text = re.sub(r'([στθερωνλαβΔ])_theta\b', r'\1<sub>θ</sub>', text)
 
     # 6. Standard Engineering variables & subscripts (Hf, Qth, Qact, Cd, Cc, Cv, Cp, etc.)
     eng_vars = [
