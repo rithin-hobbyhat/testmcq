@@ -1,9 +1,9 @@
 @echo off
-title MCQ Practice Arena - Web & Mobile Server
+title HOBBY HAT MCQ - Web & Mobile Server
 cd /d "%~dp0"
 
 echo ========================================================
-echo        Starting MCQ Practice Arena Server...
+echo        Starting HOBBY HAT MCQ Server...
 echo ========================================================
 echo.
 

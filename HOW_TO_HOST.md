@@ -1,6 +1,6 @@
-# 📱 MCQ Practice Arena - Online Hosting & Smartphone Guide
+# 📱 HOBBY HAT MCQ - Online Hosting & Smartphone Guide
 
-This application has been converted into a high-performance, mobile-responsive **MCQ Practice Arena** that can be hosted online for free and played on smartphones, tablets, and computers.
+This application has been converted into a high-performance, mobile-responsive **HOBBY HAT MCQ** that can be hosted online for free and played on smartphones, tablets, and computers.
 
 ---
 
@@ -57,7 +57,7 @@ The app is built as a **Progressive Web App (PWA)**:
 - **On Android (Chrome)**: Tap the 3 dots menu `⋮` > tap **"Add to Home screen"** or **"Install App"**.
 - **On iPhone (Safari)**: Tap the Share button `⎋` > tap **"Add to Home Screen"**.
 
-This installs the MCQ Practice Arena onto your home screen with a dedicated app icon and full-screen view (no browser address bar), and it can even work **100% offline** once cached!
+This installs the HOBBY HAT MCQ onto your home screen with a dedicated app icon and full-screen view (no browser address bar), and it can even work **100% offline** once cached!
 
 ---
 

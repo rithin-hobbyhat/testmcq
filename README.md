@@ -1,6 +1,6 @@
-# ⚡ MCQ Practice Arena & Question Bank Studio (Version 3.0)
+# ⚡ HOBBY HAT MCQ & Question Bank Studio (Version 3.0)
 
-A high-performance, mobile-responsive **Online MCQ Practice Arena** and **Question Bank Authoring Studio** featuring the innovative **Pocket Study Mode**, pure high-contrast **Black & White Dark Mode**, multi-subject selection, and real-time performance analytics.
+A high-performance, mobile-responsive **Online HOBBY HAT MCQ** and **Question Bank Authoring Studio** featuring the innovative **Pocket Study Mode**, pure high-contrast **Black & White Dark Mode**, multi-subject selection, and real-time performance analytics.
 
 ---
 
